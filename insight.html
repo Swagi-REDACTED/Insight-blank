@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Insight Fluid Canvas</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html, body {
+      width:100%; height:100%;
+      overflow: hidden;
+      background: transparent;
+    }
+
+    .bg {
+      position: relative;
+      width: 100%; height: 100%;
+      background: linear-gradient(45deg,
+        #FFC1C1, #FFE6B3, #a5f2f2, #B3E5FC,
+        #D1C4E9, #FFCDD2, #FFF9C4, #BBDEFB
+      );
+      background-size: 300% 300%;
+      animation: gradientFlow 40s ease infinite;
+      filter: url(#liquid);
+      overflow: hidden;
+    }
+
+    .overlay-text {
+      position: absolute;
+      top:50%; left:50%;
+      transform: translate(-50%, -50%);
+      font-family: sans-serif;
+      font-size: 10vw; /* made it bigger */
+      font-weight: bold;
+      text-transform: uppercase;
+      white-space: nowrap;
+      color: white;
+      text-shadow:
+        0 0 5px rgba(255,255,255,0.8),
+        0 0 10px rgba(255,255,255,0.6),
+        0 0 20px rgba(255,255,255,0.4);
+      animation:
+        hueShift 4s linear infinite,
+        jitter 60s steps(100) infinite;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    .bg::before {
+      content:"";
+      position:absolute;
+      inset:0;
+      background: radial-gradient(circle at center, rgba(255,255,255,0.15), transparent 70%);
+      pointer-events:none;
+      filter: blur(20px);
+      z-index: 1;
+    }
+
+    .bg::after {
+      content:"";
+      position:absolute;
+      top:-25%; left:-25%;
+      width:150%; height:150%;
+      background-image: url("data:image/svg+xml;utf8,\
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 800'>\
+  <g stroke='rgba(255,255,255,0.2)' stroke-width='1' fill='none'>\
+    <path d='M10,120 C150,80 250,160 400,120 S700,100 790,130'/>\
+    <path d='M0,200 C200,180 300,260 500,220 S800,200 800,240'/>\
+    <path d='M20,300 C120,340 320,280 600,320 S780,360 800,300'/>\
+    <path d='M0,400 C180,380 300,450 520,420 S780,460 800,430'/>\
+    <path d='M10,500 C150,540 300,480 520,550 S780,580 790,520'/>\
+    <path d='M0,600 C200,580 300,650 550,610 S800,630 800,660'/>\
+    <path d='M20,700 C180,740 320,680 600,720 S780,760 800,700'/>\
+  </g>\
+</svg>");
+      background-repeat: repeat;
+      background-size: 800px 800px;
+      animation: moveLines 80s linear infinite;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .streak {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: radial-gradient(circle, rgba(255,255,255,0.5) 0%, transparent 60%);
+      opacity: 0;
+      animation: streakMove 2s ease-out forwards;
+      pointer-events: none;
+      mix-blend-mode: overlay;
+      z-index: 3;
+    }
+
+    @keyframes gradientFlow {
+      0%   { background-position:   0% 50%; }
+      50%  { background-position: 100% 50%; }
+      100% { background-position:   0% 50%; }
+    }
+
+    @keyframes moveLines {
+      from { transform: translate(0,0) scale(1); }
+      to   { transform: translate(-50%,-50%) scale(1.05); }
+    }
+
+    @keyframes hueShift {
+      from { filter: hue-rotate(0deg); }
+      to   { filter: hue-rotate(360deg); }
+    }
+
+    @keyframes jitter {
+      0%   { transform: translate(-50%,-50%) translate(0,0) scale(1); }
+      25%  { transform: translate(-50%,-50%) translate(1px,-1px) scale(1.02); }
+      50%  { transform: translate(-50%,-50%) translate(-1px,1px) scale(0.98); }
+      75%  { transform: translate(-50%,-50%) translate(1px,1px) scale(1.03); }
+      100% { transform: translate(-50%,-50%) translate(0,0) scale(1); }
+    }
+
+    @keyframes streakMove {
+      0% {
+        transform: translateY(100%) rotate(45deg) scale(1);
+        opacity: 1;
+      }
+      100% {
+        transform: translateY(-100%) rotate(45deg) scale(1.5);
+        opacity: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- SVG Filter for the Liquid Effect -->
+  <svg xmlns="http://www.w3.org/2000/svg" style="position:absolute;width:0;height:0;pointer-events:none">
+    <filter id="liquid" x="0" y="0" width="100%" height="100%" filterUnits="userSpaceOnUse">
+      <feTurbulence id="turb" type="turbulence"
+        baseFrequency="0.012 0.015" numOctaves="3" seed="5"/>
+      <animate xlink:href="#turb" attributeName="baseFrequency"
+        dur="20s"
+        values="0.015 0.02; 0.012 0.015; 0.015 0.02"
+        repeatCount="indefinite"/>
+      <feDisplacementMap in="SourceGraphic"
+        scale="20" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+  </svg>
+
+  <div class="bg">
+    <div class="overlay-text">INSIGHT</div>
+  </div>
+
+  <script>
+    (function streakSpawner(){
+      const bg = document.querySelector('.bg');
+      setInterval(() => {
+        const s = document.createElement('div');
+        s.className = 'streak';
+        const size = Math.random() * 50 + 50;
+        s.style.width = size + '%';
+        s.style.height = size + '%';
+        const blur = Math.random() * 30 + 20;
+        s.style.filter = `blur(${blur}px)`;
+        const hueRotate = Math.random() * 360;
+        s.style.background = `radial-gradient(circle, hsla(${hueRotate}, 100%, 80%, 0.4) 0%, transparent 60%)`;
+        s.style.left = (Math.random() * 100) + '%';
+        s.style.top = (Math.random() * 100) + '%';
+        bg.appendChild(s);
+        setTimeout(() => bg.removeChild(s), 2000);
+      }, 500);
+    })();
+  </script>
+
+</body>
+</html>
